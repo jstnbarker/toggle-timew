@@ -76,7 +76,9 @@ def main():
     
     options = [str(last), "continue", "leetcode", "htb", "anime", "anki"]
     sel = dmenu(options=options, prompt="What doing?")
-    if sel == str(last):
+    if sel == "":
+        return
+    elif sel == str(last):
         os.system("timew continue @1")
     elif sel == "continue":
         entry_list = []
