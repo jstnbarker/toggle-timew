@@ -1,4 +1,5 @@
 {
     "data_dir": "/home/jstn/.local/share/timewarrior/data/",
-    "signal": 4
+    "signal": 4,
+    "threshold": 3
 }

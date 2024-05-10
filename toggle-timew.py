@@ -1,7 +1,6 @@
 #!/bin/python
 
 import datetime
-import sys
 import os
 import subprocess
 import json
@@ -63,7 +62,7 @@ def main():
     # if interval started more than 3 minutes ago save; otherwise cancel
     if os.system("timew") == 0:
         delta = now - last.start
-        if delta.seconds/60 > 3:
+        if delta.seconds/60 > config["threshold"]:
             os.system("timew stop")
         else:
             os.system("timew cancel")
