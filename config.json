@@ -1,5 +1,6 @@
 {
     "data_dir": "/home/jstn/.local/share/timewarrior/data/",
     "signal": 4,
-    "threshold": 3
+    "threshold": 3,
+    "continue_limit": 10
 }
