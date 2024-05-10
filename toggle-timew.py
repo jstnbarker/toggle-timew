@@ -33,7 +33,13 @@ class entry():
         return "{0} -- {1}".format(self.annotation, " ".join(self.taglist))
 
     def duration(self):
-        return self.end - self.start
+        delta: datetime.timedelta
+        try:
+            delta = self.end - self.start
+        except Exception:
+            now = datetime.datetime.now(datetime.timezone.utc)
+            delta = now - self.start
+        return delta
 
 
 def dmenu(options=[''], prompt="", vertical=1):
@@ -61,8 +67,7 @@ def main():
     # exit code 0 means open interval
     # if interval started more than 3 minutes ago save; otherwise cancel
     if os.system("timew") == 0:
-        delta = now - last.start
-        if delta.seconds/60 > config["threshold"]:
+        if last.duration().seconds/60 > config["threshold"]:
             os.system("timew stop")
         else:
             os.system("timew cancel")
@@ -77,14 +82,12 @@ def main():
         entry_list = []
         added_hashes = []
         options_list = []
-        unique = 0
         for index in range(len(entries)):
             temp = entry(entries[index])
-            if hash(str(temp)) not in added_hashes and unique < config["continue_limit"]:
+            if hash(str(temp)) not in added_hashes and len(added_hashes) < config["continue_limit"]:
                 entry_list.append(temp)
                 options_list.append(str(temp))
                 added_hashes.append(hash(str(temp)))
-                unique += 1
         e = entry_list[options_list.index(dmenu(options_list,vertical=20))]
         start_timew(e.annotation, e.taglist)
     else:
