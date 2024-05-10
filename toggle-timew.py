@@ -66,9 +66,10 @@ def main():
             os.system("timew stop")
         else:
             os.system("timew cancel")
+        os.system("pkill -RTMIN+" + str(config["signal"]) + " dwmblocks")
         return
     
-    options = [str(last), "continue", "leetcode", "htb", "jp"]
+    options = [str(last), "continue", "leetcode", "htb", "anime", "anki"]
     sel = dmenu(options=options, prompt="What doing?")
     if sel == str(last):
         os.system("timew continue @1")
@@ -79,7 +80,7 @@ def main():
         unique = 0
         for index in range(len(entries)):
             temp = entry(entries[index])
-            if hash(str(temp)) not in added_hashes and unique < 20:
+            if hash(str(temp)) not in added_hashes and unique < config["continue_limit"]:
                 entry_list.append(temp)
                 options_list.append(str(temp))
                 added_hashes.append(hash(str(temp)))
@@ -88,6 +89,13 @@ def main():
         start_timew(e.annotation, e.taglist)
     else:
         taglist = [sel]
+        if sel == "anime":
+            taglist.append("jp")
+            taglist.append("immersion")
+        elif sel == "anki":
+            taglist.append("jp")
+        elif sel == "leetcode":
+            taglist.append("dev")
         annotation = dmenu(prompt="Annotation")
         start_timew(annotation, taglist)
     os.system("pkill -RTMIN+" + str(config["signal"]) + " dwmblocks")
