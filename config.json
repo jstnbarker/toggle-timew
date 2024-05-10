@@ -1,3 +1,4 @@
 {
-    "data_dir": "/home/jstn/.local/share/timewarrior/data/"
+    "data_dir": "/home/jstn/.local/share/timewarrior/data/",
+    "signal": 4
 }
