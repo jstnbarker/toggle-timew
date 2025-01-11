@@ -1,4 +1,6 @@
 {
+    "dmenu": "wmenu",
+    "bar": "waybar",
     "data_dir": "/home/jstn/.local/share/timewarrior/data/",
     "signal": 4,
     "threshold": 3,

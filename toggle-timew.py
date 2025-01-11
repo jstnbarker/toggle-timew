@@ -19,7 +19,7 @@ class entry():
         except Exception:
             self.taglist = []
         try:
-            self.annotation = delimited[2]
+            self.annotation = delimited[2].strip('"')
         except Exception:
             self.annotation = ""
         date_interval = delimited[0].split(' ')
@@ -41,19 +41,21 @@ class entry():
             delta = now - self.start
         return delta
 
-
-def dmenu(options=[''], prompt="", vertical=1):
+def dmenu(dmenu="dmenu", options=[''], prompt="", vertical=0):
     options = "\n".join(options)
-    dmenu_string = "dmenu "
+    dmenu_string = dmenu
     if len(prompt) != 0:
-        dmenu_string += "-p '" + prompt + "' "
-    if vertical != 1:
-        dmenu_string += "-l " + str(vertical) + " "
+        dmenu_string += " -p '" + prompt + "' "
+    if vertical != 0:
+        dmenu_string += " -l " + str(vertical) + " "
     return subprocess.getoutput("printf '{0}' | {1}".format(options, dmenu_string))
 
 def start_timew(annotation: str, taglist: list[str]):
     os.system("timew start " + " ".join(taglist))
     os.system("timew annotate '" + annotation + "'")
+
+def signal_process(signum, process_name):
+    os.system("pkill -RTMIN+" + str(signum) + " " + process_name)
 
 def main():
     config = json.loads(open("./config.json").read())
@@ -71,11 +73,11 @@ def main():
             os.system("timew stop")
         else:
             os.system("timew cancel")
-        os.system("pkill -RTMIN+" + str(config["signal"]) + " dwmblocks")
+        signal_process(config["signal"], config["bar"])
         return
     
     options = [str(last), "continue", "leetcode", "htb", "anime", "anki"]
-    sel = dmenu(options=options, prompt="What doing?")
+    sel = dmenu(dmenu=config["dmenu"], options=options, prompt="What doing?")
     if sel == "":
         return
     elif sel == str(last):
@@ -90,7 +92,7 @@ def main():
                 entry_list.append(temp)
                 options_list.append(str(temp))
                 added_hashes.append(hash(str(temp)))
-        e = entry_list[options_list.index(dmenu(options_list,vertical=20))]
+        e = entry_list[options_list.index(dmenu(dmenu=config["dmenu"], options=options_list,vertical=20))]
         start_timew(e.annotation, e.taglist)
     else:
         taglist = [sel]
@@ -101,11 +103,10 @@ def main():
             taglist.append("jp")
         elif sel == "leetcode":
             taglist.append("dev")
-        annotation = dmenu(prompt="Annotation")
+        annotation = dmenu(dmenu=config["dmenu"] ,prompt="Annotation")
         start_timew(annotation, taglist)
-    os.system("pkill -RTMIN+" + str(config["signal"]) + " dwmblocks")
+    signal_process(config["signal"], config["bar"])
     return 0
-
 
 if __name__ == '__main__':
     main()
