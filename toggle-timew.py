@@ -63,7 +63,6 @@ def main():
         if menu_result != "":
             selection = unique[menu_result]
             continue_interval(selection)
-        return
     else:
         taglist = [sel]
         if sel == "anime":
