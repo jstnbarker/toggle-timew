@@ -57,17 +57,42 @@ def start_timew(annotation: str, taglist: list[str]):
 def signal_process(signum, process_name):
     os.system("pkill -RTMIN+" + str(signum) + " " + process_name)
 
+def get_intervals(path, quantity=10):
+    now = datetime.datetime.now(datetime.timezone.utc)
+    entries = []
+    month = now.month
+    year = now.year
+    current_count = 0
+    while(True):
+        month -= 1
+        if month <= 0:
+            month += 12
+            year -= 1
+        if year < 1970: 
+            return [] 
+        path = path + str(year) + "-" + "{:02d}".format(month)+ ".data"
+        try:
+            data = open(path, "r")
+            temp = data.readlines()
+            data.close()
+            temp.reverse()
+            for line in temp:
+                entries.append(entry(line))
+                current_count += 1
+                if current_count == quantity:
+                    return entries
+                
+        except FileNotFoundError:
+            pass
+
 def main():
     config = json.loads(open("./config.json").read())
-    now = datetime.datetime.now(datetime.timezone.utc)
-    path = config["data_dir"] + str(now.year) + "-" + "{:02d}".format(now.month)+ ".data"
 
-    entries = open(path, "r").readlines()
-    entries.reverse()
-    last = entry(entries[0])
+    intervals = get_intervals(config["data_dir"], quantity=100)
 
+    last = intervals[0]
     # exit code 0 means open interval
-    # if interval started more than 3 minutes ago save; otherwise cancel
+    # if interval started more than `config['threshold']` minutes ago save; otherwise cancel
     if os.system("timew") == 0:
         if last.duration().seconds/60 > config["threshold"]:
             os.system("timew stop")
@@ -83,17 +108,15 @@ def main():
     elif sel == str(last):
         os.system("timew continue @1")
     elif sel == "continue":
-        entry_list = []
-        added_hashes = []
-        options_list = []
-        for index in range(len(entries)):
-            temp = entry(entries[index])
-            if hash(str(temp)) not in added_hashes and len(added_hashes) < config["continue_limit"]:
-                entry_list.append(temp)
-                options_list.append(str(temp))
-                added_hashes.append(hash(str(temp)))
-        e = entry_list[options_list.index(dmenu(dmenu=config["dmenu"], options=options_list,vertical=20))]
-        start_timew(e.annotation, e.taglist)
+        unique = dict()
+        for interval in intervals:
+            key = str(interval)
+            try: 
+                unique[key]
+            except KeyError:
+                unique[key] = interval
+        selection = unique[dmenu(dmenu=config["dmenu"], options=list(unique.keys()), vertical=20)]
+        start_timew(taglist=selection .taglist, annotation=selection.annotation)
     else:
         taglist = [sel]
         if sel == "anime":
