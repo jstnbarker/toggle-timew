@@ -95,7 +95,7 @@ def get_intervals(path, quantity=10):
             month += 12
             year -= 1
         if year < 1970: 
-            return [] 
+            return entries 
 
 def main():
     config = json.loads(open("./config.json").read())
