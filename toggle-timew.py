@@ -30,7 +30,16 @@ class entry():
             return
 
     def __str__(self):
-        return "{0} -- {1}".format(self.annotation, " ".join(self.taglist))
+        out = ""
+        if self.annotation != "":
+            out += self.annotation
+        
+        tags = " ".join(self.taglist)
+        if self.annotation != "" and tags != "":
+            out += " - "
+        if tags != "":
+            out += " ".join(self.taglist)
+        return out
 
     def duration(self):
         delta: datetime.timedelta
@@ -54,6 +63,9 @@ def start_timew(annotation: str, taglist: list[str]):
     os.system("timew start " + " ".join(taglist))
     os.system("timew annotate '" + annotation + "'")
 
+def continue_interval(interval: entry):
+    start_timew(interval.annotation, interval.taglist)
+
 def signal_process(signum, process_name):
     os.system("pkill -RTMIN+" + str(signum) + " " + process_name)
 
@@ -64,12 +76,6 @@ def get_intervals(path, quantity=10):
     year = now.year
     current_count = 0
     while(True):
-        month -= 1
-        if month <= 0:
-            month += 12
-            year -= 1
-        if year < 1970: 
-            return [] 
         path = path + str(year) + "-" + "{:02d}".format(month)+ ".data"
         try:
             data = open(path, "r")
@@ -81,16 +87,21 @@ def get_intervals(path, quantity=10):
                 current_count += 1
                 if current_count == quantity:
                     return entries
-                
         except FileNotFoundError:
             pass
 
+        month -= 1
+        if month <= 0:
+            month += 12
+            year -= 1
+        if year < 1970: 
+            return [] 
+
 def main():
     config = json.loads(open("./config.json").read())
-
     intervals = get_intervals(config["data_dir"], quantity=100)
-
     last = intervals[0]
+
     # exit code 0 means open interval
     # if interval started more than `config['threshold']` minutes ago save; otherwise cancel
     if os.system("timew") == 0:
@@ -106,17 +117,18 @@ def main():
     if sel == "":
         return
     elif sel == str(last):
-        os.system("timew continue @1")
+        continue_interval(intervals[0])
     elif sel == "continue":
         unique = dict()
         for interval in intervals:
             key = str(interval)
-            try: 
-                unique[key]
-            except KeyError:
-                unique[key] = interval
+            if key != "":
+                try: 
+                    unique[key]
+                except KeyError:
+                    unique[key] = interval
         selection = unique[dmenu(dmenu=config["dmenu"], options=list(unique.keys()), vertical=20)]
-        start_timew(taglist=selection .taglist, annotation=selection.annotation)
+        continue_interval(selection)
     else:
         taglist = [sel]
         if sel == "anime":
