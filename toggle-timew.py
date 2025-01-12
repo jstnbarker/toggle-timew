@@ -1,54 +1,10 @@
 #!/bin/python
 
-import datetime
+from timew import *
+
 import os
 import subprocess
 import json
-
-class entry():
-    annotation: str
-    taglist: list[str]
-    start: datetime.datetime
-    end: datetime.datetime
-
-    def __init__(self, line: str):
-        line = line.replace("\n", "")
-        delimited = line.split(' # ')
-        try:
-            self.taglist = delimited[1].split(' ')
-        except Exception:
-            self.taglist = []
-        try:
-            self.annotation = delimited[2].strip('"')
-        except Exception:
-            self.annotation = ""
-        date_interval = delimited[0].split(' ')
-        try:
-            self.start = datetime.datetime.fromisoformat(date_interval[1])
-            self.end = datetime.datetime.fromisoformat(date_interval[3])
-        except IndexError:
-            return
-
-    def __str__(self):
-        out = ""
-        if self.annotation != "":
-            out += self.annotation
-        
-        tags = " ".join(self.taglist)
-        if self.annotation != "" and tags != "":
-            out += " - "
-        if tags != "":
-            out += " ".join(self.taglist)
-        return out
-
-    def duration(self):
-        delta: datetime.timedelta
-        try:
-            delta = self.end - self.start
-        except Exception:
-            now = datetime.datetime.now(datetime.timezone.utc)
-            delta = now - self.start
-        return delta
 
 def dmenu(dmenu="dmenu", options=[''], prompt="", vertical=0):
     options = "\n".join(options)
@@ -59,47 +15,26 @@ def dmenu(dmenu="dmenu", options=[''], prompt="", vertical=0):
         dmenu_string += " -l " + str(vertical) + " "
     return subprocess.getoutput("printf '{0}' | {1}".format(options, dmenu_string))
 
-def start_timew(annotation: str, taglist: list[str]):
-    os.system("timew start " + " ".join(taglist))
-    os.system("timew annotate '" + annotation + "'")
-
-def continue_interval(interval: entry):
-    start_timew(interval.annotation, interval.taglist)
-
 def signal_process(signum, process_name):
     os.system("pkill -RTMIN+" + str(signum) + " " + process_name)
 
-def get_intervals(path, quantity=10):
-    now = datetime.datetime.now(datetime.timezone.utc)
-    entries = []
-    month = now.month
-    year = now.year
-    current_count = 0
-    while(True):
-        path = path + str(year) + "-" + "{:02d}".format(month)+ ".data"
-        try:
-            data = open(path, "r")
-            temp = data.readlines()
-            data.close()
-            temp.reverse()
-            for line in temp:
-                entries.append(entry(line))
-                current_count += 1
-                if current_count == quantity:
-                    return entries
-        except FileNotFoundError:
-            pass
-
-        month -= 1
-        if month <= 0:
-            month += 12
-            year -= 1
-        if year < 1970: 
-            return entries 
+def readable(interval: entry):
+    out = ""
+    if interval.annotation != "":
+        out += interval.annotation
+    
+    tags = " ".join(interval.taglist)
+    if interval.annotation != "" and tags != "":
+        out += " - "
+    if tags != "":
+        out += "["
+        out += " ".join(interval.taglist)
+        out += "]"
+    return out
 
 def main():
     config = json.loads(open("./config.json").read())
-    intervals = get_intervals(config["data_dir"], quantity=100)
+    intervals = get_intervals(config["data_dir"], quantity=1000)
     last = intervals[0]
 
     # exit code 0 means open interval
@@ -112,23 +47,23 @@ def main():
         signal_process(config["signal"], config["bar"])
         return
     
-    options = [str(last), "continue", "leetcode", "htb", "anime", "anki"]
+    options = [readable(last), "continue", "leetcode", "htb", "anime", "anki"]
     sel = dmenu(dmenu=config["dmenu"], options=options, prompt="What doing?")
     if sel == "":
         return
-    elif sel == str(last):
+    elif sel == readable(last):
         continue_interval(intervals[0])
     elif sel == "continue":
         unique = dict()
         for interval in intervals:
-            key = str(interval)
+            key = readable(interval)
             if key != "":
-                try: 
-                    unique[key]
-                except KeyError:
-                    unique[key] = interval
-        selection = unique[dmenu(dmenu=config["dmenu"], options=list(unique.keys()), vertical=20)]
-        continue_interval(selection)
+                unique[key] = interval
+        menu_result = dmenu(dmenu=config["dmenu"], options=list(unique.keys()), vertical=20)
+        if menu_result != "":
+            selection = unique[menu_result]
+            continue_interval(selection)
+        return
     else:
         taglist = [sel]
         if sel == "anime":
