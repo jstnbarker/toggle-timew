@@ -27,9 +27,10 @@ def readable(interval: entry):
     tags = " ".join(interval.taglist)
     if interval.annotation != "" and tags != "":
         out += " - "
+        
     if tags != "":
         out += "["
-        out += " ".join(interval.taglist)
+        out += tags
         out += "]"
     return out
 
