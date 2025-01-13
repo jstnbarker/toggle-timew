@@ -46,34 +46,21 @@ def main():
             os.system("timew cancel")
         signal_process(config["signal"], config["bar"])
         return
+
+    # Find all unique combinations of tags and annotations
+    unique = dict()
+    for interval in intervals:
+        key = readable(interval)
+        if key != "":
+            unique[key] = interval
+
+    # Present unique choices to user
+    menu_result = dmenu(dmenu=config["dmenu"], options=list(unique.keys()), vertical=20)
     
-    options = [readable(last), "continue", "leetcode", "htb", "anime", "anki"]
-    sel = dmenu(dmenu=config["dmenu"], options=options, prompt="What doing?")
-    if sel == "":
-        return
-    elif sel == readable(last):
-        continue_interval(intervals[0])
-    elif sel == "continue":
-        unique = dict()
-        for interval in intervals:
-            key = readable(interval)
-            if key != "":
-                unique[key] = interval
-        menu_result = dmenu(dmenu=config["dmenu"], options=list(unique.keys()), vertical=20)
-        if menu_result != "":
-            selection = unique[menu_result]
-            continue_interval(selection)
-    else:
-        taglist = [sel]
-        if sel == "anime":
-            taglist.append("jp")
-            taglist.append("immersion")
-        elif sel == "anki":
-            taglist.append("jp")
-        elif sel == "leetcode":
-            taglist.append("dev")
-        annotation = dmenu(dmenu=config["dmenu"] ,prompt="Annotation")
-        start_timew(annotation, taglist)
+    if menu_result != "":
+        selection = unique[menu_result]
+        continue_interval(selection)
+
     signal_process(config["signal"], config["bar"])
     return 0
 
