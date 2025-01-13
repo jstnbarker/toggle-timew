@@ -3,6 +3,7 @@
 from timew import *
 
 import os
+from os import environ, system
 import subprocess
 import json
 
@@ -33,7 +34,7 @@ def readable(interval: entry):
     return out
 
 def main():
-    config = json.loads(open("./config.json").read())
+    config = json.loads(open(environ["HOME"] + "/.config/toggle-timew/config.json").read())
     intervals = get_intervals(config["data_dir"], quantity=1000)
     last = intervals[0]
 
@@ -41,9 +42,9 @@ def main():
     # if interval started more than `config['threshold']` minutes ago save; otherwise cancel
     if os.system("timew") == 0:
         if last.duration().seconds/60 > config["threshold"]:
-            os.system("timew stop")
+            system("timew stop")
         else:
-            os.system("timew cancel")
+            system("timew cancel")
         signal_process(config["signal"], config["bar"])
         return
 
