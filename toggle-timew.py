@@ -6,6 +6,7 @@ import os
 from os import environ, system
 import subprocess
 import json
+import argparse
 
 def dmenu(dmenu="dmenu", options=[''], prompt="", vertical=0):
     options = "\n".join(options)
@@ -34,8 +35,29 @@ def readable(interval: entry):
         out += "]"
     return out
 
+dmenu_program=""
+status_bar=""
+signal=""
+
 def main():
+    arg = argparse.ArgumentParser(usage="Prompts user with all unique tag/annotation combinations from the last 1k intervals")
+    arg.add_argument('--dmenu', help="dmenu-compatible program to prompt user")
+    arg.add_argument('--bar', help="bar to send signal")
+    arg.add_argument('--signal', help='RTMIN+n')
+
     config = json.loads(open(environ["HOME"] + "/.config/toggle-timew/config.json").read())
+    dmenu_program = config["dmenu"]
+    signal = config["signal"]
+    status_bar = config["bar"]
+
+    args = arg.parse_args()
+    if args.dmenu is not None:
+        dmenu_program = args.dmenu
+    if args.bar:
+        status_bar = args.bar
+    if args.signal:
+        signal = args.signal
+    
     intervals = get_intervals(config["data_dir"], quantity=1000)
     last = intervals[0]
 
@@ -46,7 +68,7 @@ def main():
             system("timew stop")
         else:
             system("timew cancel")
-        signal_process(config["signal"], config["bar"])
+        signal_process(signal, status_bar)
         return
 
     # Find all unique combinations of tags and annotations
@@ -57,13 +79,13 @@ def main():
             unique[key] = interval
 
     # Present unique choices to user
-    menu_result = dmenu(dmenu=config["dmenu"], options=list(unique.keys()), vertical=20)
+    menu_result = dmenu(dmenu=dmenu_program, options=list(unique.keys()), vertical=20)
     
     if menu_result != "":
         selection = unique[menu_result]
         continue_interval(selection)
 
-    signal_process(config["signal"], config["bar"])
+    signal_process(signal, status_bar)
     return 0
 
 if __name__ == '__main__':
