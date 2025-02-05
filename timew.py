@@ -78,8 +78,11 @@ def get_intervals(path, quantity=10):
             return entries 
 
 def start_timew(annotation: str, taglist: list[str]):
-    os.system("timew start " + " ".join(taglist))
-    os.system("timew annotate '" + annotation + "'")
+    os.system("timew start");
+    if len(taglist) != 0:
+        os.system("timew retag @1 " + " ".join(taglist))
+    if annotation != "":
+        os.system("timew annotate '" + annotation + "'")
 
 def continue_interval(interval: entry):
     start_timew(interval.annotation, interval.taglist)
